@@ -1,0 +1,785 @@
+index
+
+SQL> show parameter db_file_multiblock_read_count
+
+NAME                                                TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+db_file_multiblock_read_count           integer     16
+
+全表扫描的是批量处理数量
+oracle 在优化的时候会，自己判断是否走indexINDEX_NAME           COLUMN_NAME                    COL_POS UNIQUENES
+-------------------- ------------------------------ ------- ---------
+PK_EMP               EMPNO                                1 UNIQUE
+
+10G和9i在是否走index上是不同的
+10G会判断成本（会动态踩样）
+9i有index必须走index，不会做成本判断
+index是通过减少i/o不减少查询
+
+
+复合列index最多只能是32列
+复合列的长度和大于oracle块的50％（理论上的）
+表最多能有1000列
+新版块头能到128字节
+一个DB能管理5535个数据文件
+
+index从物理上分四类
+分区index
+非分区index
+B－tree   index
+       常规树
+       反向键 树 就是相同的行分到不同的叶子上去（高并发查询一个固定范围的时候，这种index会很好用） 避免index块的争用。
+                        （热点块）
+位图
+
+位图index是放重复率高的数据可以有空值
+
+
+要查看内存中的数据也是加锁的。
+
+默认，常规B-TREE非唯一键
+B -tree不能存空值
+
+
+
+频繁改变的列，不易用index
+表太小，也不易建 
+where条件中不常用列，也不易有index
+
+
+SQL> set autot trace exp
+SQL> select count(*) from emp;
+
+Execution Plan
+----------------------------------------------------------
+Plan hash value: 1006289799
+
+------------------------------------------------------------------------
+| Id  | Operation                               | Name   | Rows  | Cost (%CPU)| Time     |
+------------------------------------------------------------------------
+|   0 | SELECT STATEMENT      |                         |     1 |     2   (0)        | 00:00:01 |
+|   1 |  SORT AGGREGATE       |                                 |      1 |               |          |
+|   2 |   INDEX FAST FULL SCAN|           PK_EMP |    14 |     2   (0)        | 00:00:01 |
+------------------------------------------------------------------------
+
+Note
+-----
+   - dynamic sampling used for this statement
+
+
+
+SELECT	ic.index_name, ic.column_name,
+ic.column_position col_pos,ix.uniqueness
+FROM	user_indexes ix, user_ind_columns ic
+WHERE	ic.index_name = ix.index_name
+AND	ic.table_name = 'EMP'
+/
+INDEX_NAME           COLUMN_NAME                    COL_POS UNIQUENES
+-------------------- ------------------------------ ------- ---------
+PK_EMP                     EMPNO                                1 UNIQUE
+
+
+SQL> create index e_name on r (upper(ename));
+
+Index created.
+
+SQL> select *  from r where upper(ename)='king'
+  2  /
+
+Execution Plan
+----------------------------------------------------------
+Plan hash value: 2522476607
+
+--------------------------------------------------------------------------------------
+| Id  | Operation                   | Name   | Rows  | Bytes | Cost (%CPU)| Time     |
+--------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT            |        |     1 |    87 |     2   (0)| 00:00:01 |
+|   1 |  TABLE ACCESS BY INDEX ROWID| R      |     1 |    87 |     2   (0)| 00:00:01 |
+|*  2 |   INDEX RANGE SCAN          | E_NAME |     1 |       |     1   (0)| 00:00:01 |
+--------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - access(UPPER("ENAME")='king')
+
+Note
+-----
+   - dynamic sampling used for this statement
+
+
+
+建立索引的时候用到了函数，where子句中也得用到函数，这样才能够去使用索引
+
+
+
+ analyze index e_name validate structure  分析index有效性
+
+分析之后才能查看
+
+SQL>  select height ,blocks,lf_blks,br_blks,lf_rows from index_stats;  查看index状态
+     高度          块数           叶集块数    枝的块数     叶集的行数
+    HEIGHT     BLOCKS    LF_BLKS    BR_BLKS    LF_ROWS
+---------- ---------- ---------- ---------- ----------
+         1             8                 1              0              14
+SQL> select count(*) from r;
+
+  COUNT(*)
+----------
+        14
+
+
+update r set ename='KING'   where empno=7499
+
+
+SQL> select height ,blocks,lf_blks,br_blks,lf_rows from index_stats;
+
+    HEIGHT     BLOCKS    LF_BLKS    BR_BLKS    LF_ROWS
+---------- ---------- ---------- ---------- ----------
+         1          8          1          0         15
+
+
+SQL> select count(*) from r;
+
+  COUNT(*)
+----------
+        14
+
+
+ update r set ename='dsffdf'   where empno in (7499,7902)   修改两行的时候是16 因为第一个洞被利用上了
+SQL> select height ,blocks,lf_blks,br_blks,lf_rows from index_stats;
+
+    HEIGHT     BLOCKS    LF_BLKS    BR_BLKS    LF_ROWS
+---------- ---------- ---------- ---------- ----------
+         1          8          1          0         16
+
+ alter index e_name coalesce  合并叶集块的空间碎片  不会压缩二元高度
+alter index e_name rebuild   完全重建无效index   能压缩二元高度
+alter index e_name rebuild  tablespace user   移动index到user表空间
+alter index e_name deallocate unused           回收index高水位以上的空闲空间
+alter index e_name monitoring usage             打开index监控
+select * from v$object_usage                             查看监控后的状态
+alter index e_name nomonitoring usage            关闭index监控
+实验
+ alter table r move
+
+SQL> select * from r where upper(ename)='king'
+  2  /
+
+Execution Plan
+----------------------------------------------------------
+Plan hash value: 2846114992
+
+--------------------------------------------------------------------------
+| Id  | Operation         | Name | Rows  | Bytes | Cost (%CPU)| Time     |
+--------------------------------------------------------------------------
+|   0 | SELECT STATEMENT  |      |     1 |    87 |     3   (0)| 00:00:01 |
+|*  1 |  TABLE ACCESS FULL| R    |     1 |    87 |     3   (0)| 00:00:01 |
+--------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter(UPPER("ENAME")='king')
+
+Note
+-----
+   - dynamic sampling used for this statement
+
+为啥全表扫描了？
+因为mover 表的时候会重新insert  这个时候rowid 变成新的了 ，index的rowid不可用了。就全表扫描了
+
+
+
+alter index e_name rebuild   重建index
+SQL> select * from r where upper(ename)='SCOTT'
+  2  /
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7788 SCOTT      ANALYST         7566 19-APR-87       3000                    20
+
+
+Execution Plan
+----------------------------------------------------------
+Plan hash value: 2522476607
+
+--------------------------------------------------------------------------------------
+| Id  | Operation                   | Name   | Rows  | Bytes | Cost (%CPU)| Time     |
+--------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT            |        |     1 |    87 |     2   (0)| 00:00:01 |
+|   1 |  TABLE ACCESS BY INDEX ROWID| R      |     1 |    87 |     2   (0)| 00:00:01 |
+|*  2 |   INDEX RANGE SCAN          | E_NAME |     1 |       |     1   (0)| 00:00:01 |
+--------------------------------------------------------------------------------------
+又使用了index了
+
+ set autot off
+
+
+
+用户管理
+
+权限两大类
+对像权限
+系统权限
+
+
+select distinct PRIVILEGE from dba_sys_privs  查看系统权限
+不重复的有161个
+select username from dba_users;   查看oracle中的用户
+create user zhao identified  by zhao
+grant create session to zhao     with admin option  （系统权限） 给zhao用户一个建立会话的权力 ,可以给别人授权 ，回收权限无级连
+                                                  with grant option    权限回收有级连（对像权限）
+grant create tbale to zhao        给zhao用户一个建表的权力
+alter user zhao quota 10m on users;   给zhao用户分配使用users表空间的10m的权限
+create user zhao identified   by zhao  default tablespace users temporary tablespace temp quota 10M on users;
+grant select on scott.emp to zhao
+grant create any table to zhao
+revoke create session from zhao   回收权限
+ drop user taijun cascade; [k?'skeid] 
+
+角色
+就是一组权限的集合
+
+
+create role r1 
+grant create session ,create table to r1
+grant r1 to zhao
+
+select * from   session_roles;
+public 用户组  把权限给了public 就是全数据库的用户都有了public权限了
+grant select on scott.emp to public
+
+SQL> desc dba_sys_privs
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ GRANTEE                                   NOT NULL VARCHAR2(30)
+ PRIVILEGE                                 NOT NULL VARCHAR2(40)
+ ADMIN_OPTION                                       VARCHAR2(3)
+
+SQL> select PRIVILEGE from dba_sys_privs where GRANTEE='SCOTT';   查看用户的系统权限，角色带过来的权限是看不到的。
+
+PRIVILEGE
+----------------------------------------
+SELECT ANY DICTIONARY
+CREATE VIEW
+UNLIMITED TABLESPACE
+SQL> select granted_role from dba_role_privs where grantee='SCOTT'; 查看用户有吧些权限
+
+GRANTED_ROLE
+------------------------------
+RESOURCE
+CONNECT
+
+SQL> select PRIVILEGE from dba_sys_privs where GRANTEE='CONNECT'; 查看角色有哪些权限
+
+PRIVILEGE
+----------------------------------------
+CREATE SESSION
+
+SQL> select PRIVILEGE from dba_sys_privs where GRANTEE='RESOURCE';
+
+PRIVILEGE
+----------------------------------------
+CREATE TRIGGER
+CREATE SEQUENCE
+CREATE TYPE
+CREATE PROCEDURE
+CREATE CLUSTER
+CREATE OPERATOR
+CREATE INDEXTYPE
+CREATE TABLE
+
+8 rows selected.
+如果角色中有角色，还得找到里面角色的权限
+
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊8
+SQL>  select * from session_privs
+  2  /
+
+PRIVILEGE
+----------------------------------------
+CREATE SESSION
+UNLIMITED TABLESPACE
+CREATE TABLE
+CREATE CLUSTER
+CREATE VIEW
+CREATE SEQUENCE
+CREATE PROCEDURE
+CREATE TRIGGER
+CREATE TYPE
+CREATE OPERATOR
+CREATE INDEXTYPE
+
+PRIVILEGE
+----------------------------------------
+SELECT ANY DICTIONARY
+
+alter user zhao default role all except r3  将一个角色变成非default,在建立会话的时候是不激活的
+   create procedure  这个权限很危险 
+总结:
+
+--查看用户所拥有的系统权限：
+select PRIVILEGE from dba_sys_privs where GRANTEE='SCOTT';
+--查看用户所拥有的对象权限：
+select PRIVILEGE,OWNER,TABLE_NAME from dba_tab_privs where GRANTEE='DEMO';
+--查看用户所拥有的角色：
+SELECT GRANTED_ROLE FROM DBA_ROLE_PRIVS WHERE GRANTEE='SCOTT';
+--查看角色包括哪些系统权限：
+select PRIVILEGE from dba_sys_privs where GRANTEE='CONNECT';
+select PRIVILEGE from dba_sys_privs where GRANTEE='RESOURCE';
+--查看角色包括哪些对象权限：
+select OWNER,TABLE_NAME,PRIVILEGE from ROLE_TAB_PRIVS where ROLE='R2';
+--查看角色中包含哪些角色
+SELECT GRANTED_ROLE FROM ROLE_ROLE_PRIVS WHERE ROLE='R2';
+
+
+
+
+集合操作
+并集
+交集
+
+
+
+ 1  select * from e
+  2  union all
+  3* select * from emp
+SQL> /
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7935 zwl                                             1000                    10
+      7782 CLARK      MANAGER         7839 09-JUN-81       2450                    10
+      7839 KING       PRESIDENT            17-NOV-81       5000                    10
+      7934 MILLER     CLERK           7782 23-JAN-82       1300                    10
+      7935 dsdsd      CLERK           7839 28-JUL-10       8888                    40
+      7935 zwl                                             1000                    10
+      7499 ALLEN      SALESMAN        7698 20-FEB-81       1600        300         30
+      7521 WARD       SALESMAN        7698 22-FEB-81       1250        500         30
+      7566 JONES      MANAGER         7839 02-APR-81       2975                    20
+      7654 MARTIN     SALESMAN        7698 28-SEP-81       1250       1400         30
+      7698 BLAKE      MANAGER         7839 01-MAY-81       2850                    30
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7782 CLARK      MANAGER         7839 09-JUN-81       2450                    10
+      7788 SCOTT      ANALYST         7566 19-APR-87       3000                    20
+      7839 KING       PRESIDENT            17-NOV-81       5000                    10
+      7844 TURNER     SALESMAN        7698 08-SEP-81       1500          0         30
+      7876 ADAMS      CLERK           7788 23-MAY-87       1100                    20
+      7900 JAMES      CLERK           7698 03-DEC-81        950                    30
+      7902 FORD       ANALYST         7566 03-DEC-81       3000                    20
+      7934 MILLER     CLERK           7782 23-JAN-82       1300                    10
+
+19 rows selected.
+结果集在一起
+
+
+
+交集  (只显示相同的)
+
+ 1  select * from e
+  2  intersect
+  3* select * from emp
+SQL> /
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7782 CLARK      MANAGER         7839 09-JUN-81                      2450        10
+      7839 KING       PRESIDENT            17-NOV-81                           5000        10
+      7934 MILLER     CLERK           7782 23-JAN-82                          1300        10
+      7935 zwl                                                                                  1000        10
+
+
+
+差集  （只显示不同的行）
+
+
+  1  select * from e  第一条子句中的结果集在下边那里没有的
+  2  minus
+  3* select * from emp
+SQL> /
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO
+---------- ---------- --------- ---------- --------- ---------- ---------- ----------
+      7935 dsdsd      CLERK           7839 28-JUL-10       8888                    40
+
+
+
+数据类型不一样的时候不能做这样的操作
+
+ select * from V$TIMEZONE_NAMES;  看oracle的时区
+
+
+
+
+SQL> SELECT TZ_OFFSET('US/Eastern') FROM DUAL;
+
+TZ_OFFS
+-------
+-04:00
+
+SQL> SELECT TZ_OFFSET('Canada/Yukon') FROM DUAL;
+
+TZ_OFFS
+-------
+-07:00
+
+SQL> SELECT TZ_OFFSET('Europe/London') FROM DUAL;
+
+TZ_OFFS
+-------
++01:00
+
+
+
+SET NLS_DATE_FORMAT = 'DD-MON-YYYY HH24:MI:SS';
+  2  
+Session altered.
+
+SQL> select sysdate from dual;
+
+SYSDATE
+--------------------
+28-JUL-2010 13:49:28
+
+
+
+
+
+
+ALTER SESSION SET TIME_ZONE = '-5:0';
+
+Session altered.
+
+SQL> SELECT SESSIONTIMEZONE, CURRENT_DATE FROM DUAL;
+
+SESSIONTIMEZONE
+---------------------------------------------------------------------------
+CURRENT_DATE
+--------------------
+-05:00
+28-JUL-2010 00:50:08
+
+
+SQL> select sysdate from dual
+  2  /
+
+SYSDATE
+--------------------
+28-JUL-2010 13:50:17
+
+
+
+SQL> ALTER SESSION SET TIME_ZONE = '-8:0';
+
+Session altered.
+
+SQL> SELECT SESSIONTIMEZONE, CURRENT_DATE FROM DUAL;
+
+SESSIONTIMEZONE
+---------------------------------------------------------------------------
+CURRENT_DATE
+--------------------
+-08:00
+27-JUL-2010 21:51:41
+
+
+SQL> select CURRENT_DATE from dual;
+
+CURRENT_DATE
+--------------------
+27-JUL-2010 21:52:00
+
+
+
+select * from nls_session_parameters   会话级别的时间设置
+显示优先级会话级别高在DB级别
+
+
+
+SELECT FROM_TZ(TIMESTAMP 
+       '2000-03-28 08:00:00','3:00')
+  3  FROM DUAL;
+
+FROM_TZ(TIMESTAMP'2000-03-2808:00:00','3:00')
+---------------------------------------------------------------------------
+28-MAR-00 08.00.00.000000000 AM +03:00
+
+
+
+
+SELECT FROM_TZ(TIMESTAMP    地区方式 （绝对时间全球化）
+       '2000-03-28 08:00:00', 'Australia/North')
+  3  FROM DUAL;
+
+FROM_TZ(TIMESTAMP'2000-03-2808:00:00','AUSTRALIA/NORTH')
+---------------------------------------------------------------------------
+28-MAR-00 08.00.00.000000000 AM AUSTRALIA/NORTH
+
+
+
+
+
+--低效的
+SELECT DEPTNO,JOB,SUM(SAL)
+FROM EMP
+GROUP BY DEPTNO,JOB
+UNION
+SELECT DEPTNO,NULL,SUM(SAL)
+FROM EMP
+GROUP BY DEPTNO
+UNION
+SELECT NULL,NULL,SUM(SAL)
+FROM EMP;
+--高效的
+select deptno,job,sum(sal)
+from emp
+group by  rollup (deptno,job)  
+order by 1
+rollup(a,b,c)
+先对a分组求和，再结A，B联合分组求和。再对a,b,c分组求和,最后求总和
+SQL> /
+
+    DEPTNO     JOB         SUM(SAL)
+---------- --------- ----------
+        10     CLERK                 1300
+        10     MANAGER           2450
+        10     PRESIDENT          5000
+        10                               1000
+        10                               9750
+        20      ANALYST             6000
+        20      CLERK                 1100
+        20      MANAGER            2975
+        20                                 10075
+        30       CLERK                  950
+        30      MANAGER             2850
+
+    DEPTNO JOB         SUM(SAL)
+---------- --------- ----------
+        30 SALESMAN             5600
+        30                               9400
+                                           29225
+
+**************************************************************************************************
+SELECT DEPTNO,JOB,SUM(SAL)
+FROM EMP
+GROUP BY DEPTNO,JOB
+UNION
+SELECT DEPTNO,NULL,SUM(SAL)
+FROM EMP
+GROUP BY DEPTNO
+UNION
+SELECT null,job,SUM(SAL)
+FROM EMP
+GROUP BY job
+union
+SELECT NULL,NULL,SUM(SAL)
+FROM EMP;
+
+
+
+
+
+select deptno,job,sum(sal)
+from emp
+group by  cube (deptno,job)
+order by 1
+SQL> /
+
+    DEPTNO JOB         SUM(SAL)
+---------- --------- ----------
+        10 CLERK              1300
+        10 MANAGER         2450
+        10 PRESIDENT       5000
+        10                         1000
+        10                         9750
+        20 ANALYST           6000
+        20 CLERK               1100
+        20 MANAGER         2975
+        20                         10075
+        30 CLERK               950
+        30 MANAGER         2850
+
+    DEPTNO JOB         SUM(SAL)
+---------- --------- ----------
+        30 SALESMAN        5600
+        30                          9400
+             ANALYST             6000
+             CLERK                3350
+             MANAGER          8275
+             PRESIDENT        5000
+             SALESMAN        5600
+                                     1000
+                                     29225
+
+
+
+
+select deptno,job ,sum(sal) ,grouping(job)
+from emp
+group by rollup(deptno,job)
+
+
+
+  DEPTNO JOB         SUM(SAL) GROUPING(JOB)
+---------- --------- ---------- -------------
+        10                         1000             0
+        10 CLERK              1300             0
+        10 MANAGER         2450             0
+        10 PRESIDENT       5000             0
+        10                         9750             1
+        20 CLERK               1100             0
+        20 ANALYST           6000             0
+        20 MANAGER         2975             0
+        20                          10075            1
+        30 CLERK               950             0
+        30 MANAGER         2850             0
+
+
+
+ 1  select deptno,job,mgr,sum(sal)
+  2  from emp
+  3  group by grouping sets
+  4* ((deptno,job),(job,mgr))
+SQL> /
+
+    DEPTNO JOB              MGR   SUM(SAL)
+---------- --------- ---------- ----------
+        30 SALESMAN                   5600
+        20 MANAGER                    2975
+        20 CLERK                      1100
+        30 CLERK                       950
+        10 PRESIDENT                  5000
+        30 MANAGER                    2850
+        10 CLERK                      1300
+        10                            1000
+        10 MANAGER                    2450
+        20 ANALYST                    6000
+                                      1000
+
+    DEPTNO JOB              MGR   SUM(SAL)
+---------- --------- ---------- ----------
+           PRESIDENT                  5000
+           CLERK           7698        950
+           CLERK           7788       1100
+           CLERK           7782       1300
+           SALESMAN        7698       5600
+           MANAGER         7839       8275
+           ANALYST         7566       6000
+
+
+
+SELECT  a.last_name, a.salary,
+        a.department_id, b.salavg
+FROM    employees a, (SELECT   department_id,
+                      AVG(salary) salavg
+                      FROM     employees
+                      GROUP BY department_id) b
+WHERE   a.department_id = b.department_id
+AND     a.salary > b.salavg
+
+
+交互式子查询
+
+
+SELECT ename, sal, deptno
+FROM   emp outer
+WHERE  sal >  ( SELECT AVG(sal)
+ FROM   emp
+ WHERE  deptno =  
+        outer.deptno) 
+ENAME             SAL     DEPTNO
+---------- ---------- ----------
+ALLEN            1600         30
+JONES            2975         20
+BLAKE            2850         30
+CLARK            2450         10
+SCOTT            3000         20
+KING             5000         10
+FORD             3000         20
+
+7 rows selected.
+
+
+
+
+SELECT ename, sal, deptno
+FROM   emp outer
+WHERE  sal >  ( SELECT AVG(sal)
+ FROM   emp)
+
+ENAME             SAL     DEPTNO
+---------- ---------- ----------
+JONES            2975         20
+BLAKE            2850         30
+CLARK            2450         10
+SCOTT            3000         20
+KING             5000         10
+FORD             3000         20
+
+
+
+
+
+
+SELECT employee_id, last_name, job_id, department_id
+FROM   employees outer
+WHERE  EXISTS ( SELECT 'X'
+                 FROM   employees
+                 WHERE  manager_id =
+                        outer.employee_id)
+ 
+
+alter table e add (location varcahr2(13));
+
+update  e lin
+  2  set location =(select loc from dept zhao where lin.deptno=zhao.deptno);
+
+     EMPNO ENAME      JOB              MGR HIREDATE         SAL       COMM     DEPTNO LOCATION
+---------- ---------- --------- ---------- --------- ---------- ---------- ---------- -------------
+      7935 zwl                                                                    1000                          10 NEW YORK
+      7782 CLARK      MANAGER      7839    09-JUN-81        2450                           10 NEW YORK
+      7839 KING         PRESIDENT                17-NOV-81       5000                           10 NEW YORK
+      7934 MILLER      CLERK           7782    23-JAN-82        1300                           10 NEW YORK
+      7935 dsdsd        CLERK           7839     28-JUL-10        8888                            40 BOSTON
+
+SELECT department_id, department_name
+FROM departments d
+WHERE NOT EXISTS (SELECT 'X'
+                  FROM   employees
+                  WHERE  department_id
+                         = d.department_id)
+  这语句是查询大哥
+with后的子句叫询问块 保存在 temp表空间
+
+WITH 
+dept_costs  AS (
+   SELECT  d.department_name, SUM(e.salary) AS dept_total
+   FROM    employees e, departments d
+   WHERE   e.department_id = d.department_id
+   GROUP BY d.department_name),
+avg_cost    AS (
+   SELECT SUM(dept_total)/COUNT(*) AS dept_avg
+   FROM   dept_costs)
+
+-------------------
+SELECT * 
+FROM   (SELECT  d.department_name, SUM(e.salary) AS dept_total
+         FROM    employees e, departments d
+         WHERE   e.department_id = d.department_id
+         GROUP BY d.department_name)
+WHERE  dept_total >
+                 (SELECT dept_avg 
+                  FROM (SELECT SUM(dept_total)/COUNT(*) AS dept_avg
+                        FROM   (SELECT  d.department_name, 
+                                        SUM(e.salary) AS dept_total
+                                 FROM    employees e, departments d
+                                 WHERE   e.department_id = d.department_id
+                                 GROUP BY d.department_name)))
+ORDER BY department_name;
+
+
+

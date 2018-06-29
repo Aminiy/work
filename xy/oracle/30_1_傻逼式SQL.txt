@@ -1,0 +1,178 @@
+oracle遵照sql99的标准开发的软件
+学习过程
+sql语句     5天
+数据库的体系结构     5天
+
+
+备份和恢复    5天
+  
+优化     4天
+
+程序开发 －－pl/sql   3天
+rac     4 天
+
+data guard   4天
+
+sqlplus         pl/sql         developer        toad            oem
+自身带          第三方工具		             图形化程序 		oracle自带的
+不需要安装       开发存储过程	             优化管理数据库	需要额外的配
+字符界面		调试程序						消耗大量的资源
+不要配置		需要椟置
+最高效		需要安装
+底层的工具
+
+sqlplus /nolog 不登录到任何用户，进入sqlplus空壳
+
+sqlplus scott/tiger
+sqlplusw /nolog
+conn / as sysdba  连接到本地最高用户
+alter user scott account unlock identified by tiger
+
+alter user hr account unlock identified by hr
+解锁还改密码
+conn scott/tiger
+select * from tab; 
+
+
+
+help  index sql/plus的帮助
+保留字的重要性
+
+select * from departments;
+
+
+l看刚才运行过的语句
+
+
+没有单引的时候大小写是不敏感的
+
+isqlplusctl start
+oracle_home/install/portlist.ini
+
+先 ＊ ／ 后 ＋ －
+未知和已知的相加减＝未知
+
+
+set lines 100
+set pages 100
+oracle_home/sqlplus/admin/glogin.sql
+
+
+select ename name , sal as salary from emp; 别名
+1、区分同源
+2、按照自己的名称显示
+3、 非法的合法化sal+300   salary
+4、双引号是界定符    （字符串是单引，
+   需要大小写的时候需要加双引）
+5、有空格的时候
+
+
+select ename||' ' ||job from emp
+
+ select  ' select * from '|| tname ||';' from tab  拼出想要的语法
+select distinct deptno from emp;  去掉重的行
+进缓冲区的叫sql 不进叫sql/plus
+
+
+
+
+save /root/1.sql  append
+spool off
+spool
+
+define _EDITOR=vi
+
+ select * from emp
+  2  where ename like ‘%/_%' ESCAPE '/' 查询带有＿线的名字
+
+and的级别大于or
+排序
+1、按照列的名称
+select * from emp order by ename;
+2、使用别名
+select ename ,sal from emp order by name
+3、使用表达式
+select  sal,sal+300 from emp order by sal+300
+4、位置排序
+select * from emp order by 3;
+5、隐含排序
+select ename,sal from emp order by empno
+
+
+
+
+select lower('SQL cursor'), from dual
+
+select lpad(salary,10,'*') from employees
+
+
+SQL> select trim  ('a' from 'aaaaaaaaaaaaaakkmmaaa') from dual;
+leading 去掉头             tariling  去掉屁股
+
+select ceil(45.001),trunc(45.901),round(45.401) from dual;
+
+
+TRIM
+----
+kkmm
+
+alter session set nls_language=american;
+select sysdate from dual;
+alter session set nls_;anguage='simplified chinese'
+alter sysdate+1/24 from dual;
+alter session set  nls_date_format='yyyy/mm/dd:hh24:mi:ss'
+
+
+select to_char(hiredate,'yyyy/mm/dd:hh24:mi:ss year month mon day dy ddsp ddspth am ') from emp
+select to_char(sysdate,'yyyy/mm/dd:hh24:mi:ss year month mon day dy ddsp ddspth am sssss') from dual
+
+
+
+
+ select LAST_NAME,to_char(HIRE_DATE,' dy ","  "the" ddspth "of" month ,yyyy') from employees;
+
+select to_char(hiredate,'yyyy/mm/dd'),to_char(hiredate,'fmyyyy/mm/dd') from emp;
+去掉前边的零
+
+select to_char(sal,'l999,999.000') from emp
+
+
+
+
+ select to_char(to_date('98','yy'),'yyyy') yy98,
+  2  to_char(to_date('08','yy'),'yyyy') yy08,
+  3  to_char(to_date('98','rr'),'yyyy') rr98,
+  4  to_char(to_date('08','rr'),'yyyy') rr08
+  5*  from dual
+SQL> /
+
+YY98 YY08 RR98 RR08
+---- ---- ---- ----
+2098 2008 1998 2008
+
+SQL> /
+
+YY98 YY08 RR98 RR08
+---- ---- ---- ----
+1998 1908 1998 2008
+
+
+rr和yy的区别
+rr在世纪交接的时候用
+yy在世纪中期的时候用
+
+
+select sal,comm,nvl(comm,0),sal+nvl(comm,0) from emp;
+
+
+
+nvl2 (a,b,c)=a为空 返回b     a不为空返回c
+
+
+
+1  select first_name ,length(first_name) "expr1",last_name, length(last_name) "expr2",
+  2* nullif(length(first_name),length(last_name)) result from employees
+看看A是否等 于B如果等于返回0，如果不等于返回A
+
+
+select status from v$instance

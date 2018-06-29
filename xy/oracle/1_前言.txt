@@ -1,0 +1,46 @@
+mstsc window 下远程连接的命令：等于 程序－附件－远程连接
+1、安装 linux windows solaris
+    数据库软件 oracle 
+    数据库       oracle DB
+2、oracle 网络配置 
+    server 服务器 
+    client   客户端
+3、SQL  PLSQL    
+4、体系结构 
+     用户权限 表空间 字符集 。。。。
+5、备份恢复 
+      flashback 闪回
+      逻辑备份恢复
+      物理备份恢复 
+6、调优 
+7、oracle 集群 
+     RAC   Real Application Cluster    一个数据库 N 个结点 最多128个
+     DG     Data Guard   主数据库 备数据库 
+     Streams
+
+
+概念
+1、ORDBMS 对象数据型关系管理系统 
+2、DB软件  
+     DB 
+3、oracle server ＝instance(实例) +物理DB 
+     a、物理DB 由 ---->控制文件 ---数据文件 ----在线日志文件-------> 组成
+     b、instance 由 SGA  和  后台进程 组成
+            （SGA：System Global Area）
+http://20101129-0914:5500/em
+
+记事本（Notepad）或emacs
+SET SERVEROUTPUT ON SIZE 1000000：这会默认地打开DBMS_OUTPUT
+SET TRIMSPOOL ON：假脱机输出文本时，会去除文本行两端的空格，而且行宽不定。如果设置为OFF（默认设置），假脱机输出的文本行宽度则等于所设置的LINESIZE。
+? SET LONG 5000：设置选择LONG和CLOB列时显示的默认字节数。
+? SET LINESIZE 100：设置SQL*Plus显示的文本行宽为100个字符。
+? SET PAGESIZE 9999：PAGESIZE可以控制SQL*Plus多久打印一次标题，这里将PAGESIZE设置为一个很大的数（所以每页只有一组标题）。
+? COLUMN PLAN_PLUS_EXP FORMAT A80：设置由AUTOTRACE得到的解释计划输出（explain plan output）的默认宽度。A80通常足以放下整个计划。
+oracle-092 例程 强制断开链接
+我们通常将最常用的应用分为2种类型：联机事务处理类型(OLTP)，决策支持系统(DSS)。
+OLTP:该类型的应用是高吞吐量，插入、更新、删除操作比较多的系统，这些系统以不断增长的大容量数据为特征
+OTLP的主要目标是可用性、速度、并发性和可恢复性
+
+
+在客户端的字符集环境比较简单，主要就是环境变量或注册表项NLS_LANG，注
+意NLS_LANG的优先级别为：参数文件<注册表<环境变量<alter session。

@@ -1,0 +1,47 @@
+4.编写SQL语句注意事项
+  (1)大小写,空格
+  (2)sql 中的变量
+		1）accept,define
+		ACCEPT CURRENT_DRAW_NUM CHAR PROMPT '请输入当前奖期：  ' 
+		execute LOT215.SELECTLOT(  &CURRENT_DRAW_NUM  ) ;
+    2) 绑定变量
+    sql>create table test(id number,name varchar2(30));
+    sql>insert into test values(1,'a');
+    sql>insert into test values(8,'b');
+    sql>commit;    
+    sql>variable t number             声明绑定变量
+    sql>execute :t:=8;                  :t 表示t    := 表示 赋值
+    sql>print t                              显示赋值
+    sql>select * from test where id=:t ;
+    v$sqlarea
+    select * from v$sqlarea 
+      where sql_text like 'select * from test where id=%'
+  (3)测试各种写法的执行效率
+ 
+  (4)oracle中append(提示)------------可以增加insert的速度。
+
+		insert /*+append*/ into table1 select * from table2
+		在使用了append选项以后，insert数据会直接加到表的最后面，而不会在表的空闲块中插入数据。
+		使用append会增加5sql_3.txt数据插入的速度。
+		/*+APPEND*/的作用:::>是在表的高水位上分配空间,不再使用表的extent中的空余空间
+		append 属于direct insert,归档模式下append+table nologging会大量减少日志,		
+		不去寻找 freelist 中的free block , 直接在table HWM 上面加入数据。
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+书写 SQL 语句的原则
+
+大小写不敏感，但单引和双引内的大小写是敏感的。切记！
+关键字不能缩写
+可以分行书写，但关键字不能被跨行书写，单引内也不要跨行书写。
+一般每个子句是一行
+可以排版来增加可读性
+字符串用单引
+列的别名用双引
+
+
+Select ename from emp where ename like ‘%/_%’ escape ‘/’;
+一般我们使用/来转义，以免产生歧异。也可用其他任何字符转义。
+
+
+
+====================================
