@@ -1,0 +1,18 @@
+newmessagecenter
+
+1. 需要一个内网端口(读取其他服务的配置，接受配置更新推送)，端口写死在程序中
+	   一个外网端口（接受http请求)参见server.yml文件，注意改文件中的属性value前要有空格 ----TO BE CONFIRM
+
+2. 需要MSC增加新的InnerService InnerServiceEvent 接口----done
+
+3. Cincommon需要增加新的InnerServiceEvent.SendMessage = 0x44;------done
+	需要将cincommon转为maven项目，newmessagecenter打包的时候把cincommon打进去了，和以往的结构不一样
+
+4. UCC需要增加新的接口做CheckCredential做HTTP请求的鉴权，此check不同于已有的check动作，本接口只比对是否相等，不更换新的credential
+	没做呢
+
+5. Scylla DB
+	多节点问题--TODO
+	用户名密码以加密的方式存储在配置文件中--TODO
+
+6. http接口文档，参见New Message Center HTTP API.docx
