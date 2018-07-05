@@ -8,8 +8,10 @@ newmessagecenter
 3. Cincommon需要增加新的InnerServiceEvent.SendMessage = 0x44;------done
 	需要将cincommon转为maven项目，newmessagecenter打包的时候把cincommon打进去了，和以往的结构不一样
 
-4. UCC需要增加新的接口做CheckCredential做HTTP请求的鉴权，此check不同于已有的check动作，本接口只比对是否相等，不更换新的credential
-	没做呢
+4. UCC需要增加新的接口做CheckCredential做HTTP请求的鉴权，此check不同于已有的check动作，本接口只比对是否相等，不更换新的credential  -- TODO
+	HTTP checkCredential 问题
+	a) credential bind with deviceid, so need http take deviceId parameter.
+	b) need add interface in UCC. 
 
 5. Scylla DB
 	多节点问题--TODO

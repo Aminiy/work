@@ -1,3 +1,9 @@
 查看PID启动的完整路径
 
 >pwdx pid
+
+带参数启动jar包
+
+nohup java -jar -XX:-OmitStackTraceInFastThrow msc.jar&
+
+nohup java -jar -Xmx6144M -XX:-OmitStackTraceInFastThrow -Dorg.jboss.netty.epollBugworkaround=true cmp.jar&
