@@ -1,0 +1,37 @@
+netty 类结构图
+
+Bootstrap--JDK
+AbstractBootstrap<abstract class>
+	* ServerBootstrap<final class>
+
+* ServerSocketChannel<interface>
+	* NioServerSocketChannel<class>
+
+EventExecutorGroup<interface>
+	* EventLoopGroup<Interface>
+		MultithreadEventExecutorGroup<abstract class>
+			MultithreadEventLoopGroup<abstract class>
+				* NioEventLoopGroup<class>
+Channel<interface>
+	* SocketChannel<interface>
+		* NioSocketChannel
+		OioSocketChannel
+ChannelHandler<interface>
+	* ChannelHandlerAdapter<class>
+		* SimpleChannelInboundHandler<abstract class>
+			* WebSocketServerHandler<class>
+		* ChannelInitializer<abstract class>
+		MessageToByteEncoder
+		ByteToMessageDecoder
+		* ChannelHandlerAppender
+
+	WebSocketFrameDecoder<interface>
+	WebSocketFrameEncoder<interface>
+* ChannelPipeline<interface>
+	DefaultChannelPipeline<final class>
+Future<interface>
+	* ChannelFuture<interface>
+* ChannelHandlerContext<interface>
+	DefaultChannelHandlerContext<final class>
+* Unpooled<final class>
+* ByteBuf

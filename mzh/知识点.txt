@@ -1,0 +1,258 @@
+
+1. redis原理(不支持事务,单线程操作,数据都在内存中)
+	a). AOF持久化(每次redis的写操作都会记录在.aof文件中，性能较低)
+	b). RDB持久化(每隔N秒就把内存中的数据同步到.rdb文件中)
+	
+	Redis集群
+		(1)所有的redis节点彼此互联(PING-PONG机制),内部使用二进制协议优化传输速度和带宽.
+		(2)节点的fail是通过集群中超过半数的节点检测失效时才生效.
+		(3)客户端与redis节点直连,不需要中间proxy层.客户端不需要连接集群所有节点,连接集群中任何一个可用节点即可
+		(4)redis-cluster把所有的物理节点映射到[0-16383]slot上,cluster 负责维护node<->slot<->value
+	 redis-cluster选举:容错
+		(1)领着选举过程是集群中所有master参与,如果半数以上master节点与master节点通信超过(cluster-node-timeout),认为当前master节点挂掉.
+		(2)什么时候整个集群不可用(cluster_state:fail),当集群不可用时,所有对集群的操作做都不可用，收到((error) CLUSTERDOWN The cluster is down)错误
+			a:如果集群任意master挂掉,且当前master没有slave.集群进入fail状态,也可以理解成进群的slot映射[0-16383]不完成时进入fail状态.
+			b:如果进群超过半数以上master挂掉，无论是否有slave集群进入fail状态.
+2. 数据库SQL
+	left join on..		以左表为主表，显示主所有和右表相关的
+	right join on..		以右表为主表，显示主所有和左表相关的
+	inner join on.. 	显示的是两个表相关的信息(只显示全匹配的) 
+	full join on..		显示两个表所有的信息（a+b）
+	union/union all..	union默认会过滤掉相同的数据
+	select... into... from... 要求into目标表不存在
+	insert... into... select... 要求into目标表存在
+	
+	执行顺序
+	where > group by > having > order by 
+	where > 聚合函数 > having
+	group by 分组， 每组默认显示一条记录
+	
+	索引-聚集索引和非聚集索引的区别？根本区别是表记录的排列顺序和与索引的排列顺序是否一致
+	聚集索引：物理存储按照索引排序。查询快，插入慢；create clustered index 索引名 on 表名(字段名)
+	非聚集索引：物理存储不按照索引排序。查询慢，插入快；CREATE NONCLUSTERED INDEX ...
+	聚集索引一个表只能有一个，而非聚集索引一个表可以存在多个
+	MySql数据库中没有非聚集索引的概念，MYISAM根本就没有聚集索引；INNODB，主键就是聚集索引，你也无法修改
+	单一索引和联合索引？
+	联合索引只支持使用最左侧的组合，因此联合索引的字段顺序很重要，比如：索引(a,b,c) 支持使用a,ab,abc,但是不支持b,c,bc
+
+	如何实现主机-从机的数据同步问题？(1主多从)
+		利用数据库复制技术 实现数据同步更新
+		复制是将一组数据从一个数据源拷贝到多个数据源的技术，是将一份数据发布到多个存储站点上的有效方式。使用复制技术，用户可以将一份数据发布到多台服务器上，从而使不同的服务器用户都可以在权限的许可的范围内共享这份数据。复制技术可以确保分布在不同地点的数据自动同步更新，从而保证数据的一致性
+	主机挂掉从机的选择和启动问题
+	
+	悲观锁乐观锁?
+		悲观锁认为事务访问相同数据的时候一定会出现相互的干扰，所以简单粗暴的使用排他访问的方式
+		乐观锁认为不同事务访问相同资源是很少出现相互干扰的情况，因此在事务处理期间不需要进行并发控制，当然乐观锁也是锁，它还是会有并发的控制
+		
+	
+3. JS，JQuery
+4. ELK
+	FILTER
+5. RESTful
+6. APNS
+7. maven(环境变量的配置)
+	常用命令：mvn clean; mvn compile; mvn test; mvn package; mvn install;
+8. java线程状态转换图
+	新建状态
+	就绪状态:调用线程的start方法，使线程处于可运行状态，等待获取CPU资源
+	运行状态：获取了CPU资源，执行代码
+	阻塞状态:因为某种原因放弃了CPU的使用权，直到线程进入就绪状态，等待重新获取CPU资源进入运行状态，
+		等待阻塞：运行的线程执行了wait()方法后，JVM会把该线程放入等待池中
+		同步阻塞：运行的线程在获取线程的同步锁时，锁被其他线程使用中，则JVM会把该线程放入锁线程池中
+		其他阻塞：运行了线程的sleep()和join()方法，或发出IO请求后，线程进入阻塞状态直到相应的处理完毕后重新进入就绪状态
+	死亡状态：run()结束或者其他异常退出
+
+	运行状态的线程被yield()后进入就绪状态。wait()方法后，线程释放所有占用的资源进入等待状态，无法自己唤醒自己，只能等待其他线程的notify, notify(),notifyall()后进入锁池状态，
+	wait()和notify（）会对线程的锁标志进行操作所以必须在同步代码块里执行，否则可能会出异常。
+	suspend()和resume()配合使用也会使线程进入阻塞状态，suspend()和wait()可能会导致死锁。
+9. 多线程
+	Thread和Runnable方式区别：Runnable还可以用于“资源的共享”。即多个线程都是基于某一个Runnable对象建立的，它们会共享Runnable对象上的资源。
+	synchronized 代码块（锁定一个obj对象） 灵活
+	synchronized 方法
+	ReentrantLock 使用锁必须在finally{}里释放锁
+	lock.lock(); 
+	lock.tryLock();
+	tryLock(long timeout,TimeUnit unit);
+	lock.unlock();
+	实例锁synchronized 锁一个对象
+	全局锁static synchronized 锁一个类 无论它有多少对象 线程都共享该锁
+	
+	synchronized锁， 被一个对象获取了后， 其他线程只能等待
+	ReentrantLock：  被一个线程获取了， 其他线程可以一直等待，可以直接返回false也可以等待一段时间看看是否能获取锁
+	小并发synchronized好些，大并发ReentrantLock好些
+	
+10. 线程池
+	ExecutorService e = Executors.newCachedThreadPool();// 可变大小线程池，按照任务数来分配线程，
+    	ExecutorService e = Executors.newSingleThreadExecutor();// 单线程池，相当于FixedThreadPool(1)
+   	 ExecutorService e = Executors.newFixedThreadPool(3);// 固定大小线程池。
+   	 ExecutorService e = Executors.newScheduledThreadPool(5);// 创建一个定长线程池，支持定时及周期性任务执行。 
+   	 // 然后运行
+  	e.execute(new MyRunnableImpl());
+	
+	ExecutorService 的submit()与execute(); submit()有返回Future.get()为null值 方便处理异常 接受参数runable callable  execute() 有返回值 接受runnable参数
+	shutdown()与shutdownNow();
+	Runnable()与Callable()区别？runnable可被线程 线程池用 有返回但Future.get()值为null callable只能用于线程池 有返回值Future 可抛异常
+	 
+11. 容器类-队列-先进先出
+	BlockingQueue			单向队列-先进先出
+	ConcurrentLinkedQueue 	线程安全队列
+	
+	常见的阻塞队列有：
+		ArrayListBlockingQueue
+		LinkedListBlockingQueue
+		DelayQueue
+		SynchronousQueue
+12. 容器类-栈-先进后出
+	Stack继承于Vector 由于Vector是通过数组实现的，所以Stack也是，而非链表
+	
+13. java 基础 - List
+	ArrayList 	源码分析 基于数组的动态数据结构 非线程安全 默认初始化大小为10 容量不足时增加原来的容量的一半
+	Vector 		线程安全 默认初始化大小为10 容量不足时增加原来的容量的一倍
+	LinkedList	基于双向链表的数据结构，链表就不存在初始容量及扩容的问题 先进先出
+14. java基础 - Map
+	TreeMap		保证顺序 非同步
+	HashMap	 	是一个散列表 非同步的 不保证顺序 key value可为null HashMap的总的大小，必须是2的指数倍
+	ConcurrentHashMap 初始容量16 容量必须是2的指数倍 高效的线程安全HashMap。
+	Hashtable 	是一个散列表 同步的 无序的 key value均不可为null  锁整个map, concurrentHashMap 分段锁，每个段都是一个Hashtable, HashMap 无锁 
+	
+	Hash碰撞的原理和解决方法?
+		再hash法，拉链法，，，
+15. java基础 - Set
+	TreeSet	由TreeMap实现 有序(自然排序、定制排序) 非同步的
+	HashSet	由HashMap实现 map.key是向HashSet中添加的值，map.value是static final的Object对象. 所以不能有重复元素
+		非同步的(Set s = Collections.synchronizedSet(new HashSet(...));) 不保证顺序 允许null元素
+16. 抽象类和接口的区别与联系
+	1. 接口的理念是 like 抽象类的理念是 is.
+	2. 接口中的方法默认都是 public,abstract类型的，
+	3. 接口变量默认是public static final型，需有初始值，其实现类中不能重新定义变量也不能改变其值，抽象类中的变量默认是 friendly 型，其值可以在子类中重新定义，也可以重新赋值。 
+	4. 抽象类中可以有自己的数据成员，也可以有非abstarct的成员方法，在接口中，只能够有静态的不能被修改的数据成员（static final，不过在接口中一般不定义数据成员），所有的成员方法都是abstract的
+17. 集群-分布式
+	集群强调多个机器干一件事，机器间可互相通信
+	分布式强调一个工作被分成N个节点执行。当然每个节点也可以是集群
+18. webservice	
+	Spring webservice
+	JDK自带webservice
+	axis  axis2 Apache的
+19. 泛型
+
+20. JVM
+	java->编译器->claas->class loader->内存(方法区，堆，栈，本地方法区)
+	堆：所有通过new创建的对象的内存都在堆中分配，堆的大小可以通过-Xmx和-Xms来控制
+		A:新生代(新建的对象都是用新生代分配内存，Eden空间不足的时候，会把存活的对象转移到Survivor中
+			大小可以由-Xmn来控制，也可以用-XX:SurvivorRatio来控制Eden和Survivor的比例)
+			a:Eden区(一个)
+			b:Survivor区(二个)
+				From Space
+				To Space
+		B:旧生代(用于存放新生代中经过多次垃圾回收仍然存活的对象)
+		C:持久代(主要存放的是Java类的类信息)持久代大小通过-XX:MaxPermSize=<N>进行设置。
+	栈：存在栈中的数据可以共享（函数中定义的一些基本类型的变量和对象的引用变量都在函数的栈内存中分配）
+	本地方法栈：用于支持native方法的执行，存储了每个native方法调用的状态
+	方法区:		存放了要加载的类信息、静态变量、final类型的常量、属性和方法信息
+	——————————
+	垃圾回收算法？3-4
+	1.引用计数器方法：无法处理深引用问题， JDK1.1以后已经停止使用
+	2.标记-清除算法：对要回收的对象做标记，然后清除，效率低，造成内存空间不连续，后续大对象可能无法分配内存空间
+	3.复制算法：用于新生代，两块内存的比例为8：1，因新生代的对象是朝生夕死，无需1：1
+	4.标记-整理算法：把存活的对象往内存一端移动，然后将边界为的空间回收，提高了内存利用率，适用于老年代
+	5.分代收集算法
+	——————————
+	堆数据共享还是栈数据共享，这个有点恍惚了。。。。。
+	有的说；一个进程创建的多个线程：每个线程都拥有自己私有的Stack，但共享一个Heap
+	
+21. 事件驱动
+
+22. 容错机制
+
+23. 序列化反序列化
+	序列化的是对象的状态不是类的状态，1. 静态成员属于类级别的，所以不能序列化，2. transient后的变量也不能序列化，序列化ID一致性是保证序列化后的对象被反序列化成功的基础
+	自定义序列化-writeObject(ObjectOutputStream out)，readObject(ObjectInputStream in) 可以控制那些属性被序列化和不被序列化。http://book.51cto.com/art/201202/317465.htm
+	如果子类实现了序列化接口，父类没实现，则父类至少要有无参构造器，才能保证反序列化的成功。3. 私有属性可以被序列化
+24. Nio, 直接使用nio进行开发比较困难， 一般选择开元框架如Netyy
+
+25. Spring AOP IOC(DI依赖注入)
+	IOC:接口注入 构造器注入， setter注入
+	AOP:切面，连接点
+
+	spring两种事务处理机制，声明式事务，编程式事务 http://blog.csdn.net/pingnanlee/article/details/11488695
+		
+	A).声明式事务
+	
+	Spring的声明式事务管理在底层是建立在AOP的基础之上的。
+	其本质是对方法前后进行拦截，然后在目标方法开始之前创建或者加入一个事务，在执行完目标方法之后根据执行情况提交或者回滚事务
+	声明式事务最大的优点就是不需要通过编程的方式管理事务，这样就不需要在业务逻辑代码中掺杂事务管理的代码，只需在配置文件中做相关的事务规则声明（或通过等价的基于标注的方式），便可以将事务规则应用到业务逻辑中
+	
+	------*****-------
+	Spring配置文件中关于事务配置总是由三个组成部分，分别是DataSource、TransactionManager和代理机制这三部分，
+	无论哪种配置方式，一般变化的只是代理机制这部分。
+	------*****-------
+	DataSource、TransactionManager这两部分只是会根据数据访问方式有所变化,例如:
+	数据访问方式	DataSource		TransactionManager
+	JDBC			DataSource		DataSourceTransactionManager
+	Hibernate		SessionFactory  HibernateTransactionManager
+	JPA				EntityManager	JpaTransactionManager
+	
+	声明式事务五种配置方式
+	1. 每个Bean都有一个代理
+	2. 所有Bean共享一个代理基类
+	3. 使用拦截器
+	4. 使用tx标签配置的拦截器
+	5. 注解
+	
+	B).编程式事务
+	Spring的编程式事务即在代码中使用编程的方式进行事务处理，可以做到比声明式事务更细粒度。
+	有两种方式一是使用TransactionManager，另外就是TransactionTemplate
+26. Spring Boot	
+	
+27. DOM JDOM DOM4J SAX---xml
+	JDOM DOM4J是对DOM的封装-基于树-与平台无关-需载入整个文档
+	SAX-基于事件驱动(回调)-无需装入整个xml文档（适合大文档）
+
+28. ThreadLocal 线程局部变量
+
+29. equals()和hashcode()复写
+
+30. 深COPY和浅COPY； 强引用，软引用，弱引用，虚引用
+	对不同的引用，JVM进行垃圾回收的时候采取的策略不一样
+31. 加密解密
+	对称加解密	：算法公开，计算量小，加密快，效率高，密钥分发困难，大量用户时密钥管理困难	AES，DES
+	非对称加解密：加解密时间长，速度慢，不适合对文件加密，只适合小量的数据加密， RSA DSA
+	摘要算法：不可逆，MD5，SHA<主要用于CA和数字证书>，SHS
+32. Hash碰撞，碰撞后如何存储
+	碰撞的原因和解决办法
+	原因：不同的key得到了相同的hashcode值，解决方法有：链表发和开放地址法
+33. hibernate-mybatis
+	区别，如何选择
+	------
+	hibernate的Session的load()和get()的区别？
+	load() 在加载的时候会根据加载策略来加载东西，加载策略默认为延迟加载
+	get() 会直接采用立即加载策略加载数据，不管你配置的是延迟加载还是立即加载
+	如果对象不存在 get返回null load抛异常
+	------
+	Hibernate控制下的POJO<对象>会呈现三种状态，分别是transient、persistenet和detached，请解释这三种状态。
+	暂态：数据库中没数据。跟session不相关。没存过。
+	游离态：在数据库中有记录，但是在session中没有。需要手工同步。
+	持久态：数据库中有记录，session中也有这记录。自动更新
+	------SQL优化方面
+	Hibernate的查询会将表中的所有字段查询出来，这一点会有性能消耗。
+	Hibernate也可以自己写SQL来指定需要查询的字段，但这样就破坏了Hibernate开发的简洁性。
+	Mybatis的SQL是手动编写的，所以可以按需求指定查询的字段
+	------扩展性方面
+	Hibernate与具体数据库的关联只需在XML文件中配置即可，所有的HQL语句与具体使用的数据库无关，移植性很好。
+	MyBatis项目中所有的SQL语句都是依赖所用的数据库的，所以不同数据库类型的支持不好。
+	------抓取策略--延迟加载
+	Hibernate对实体关联对象的抓取有着良好的机制。对于每一个关联关系都可以详细地设置是否延迟加载，
+	并且提供关联抓取、查询抓取、子查询抓取、批量抓取四种模式
+	Mybatis的延迟加载是全局配置的
+	------缓存机制对比
+	Hibernate一级缓存是Session缓存，利用好一级缓存就需要对Session的生命周期进行管理好
+	Hibernate二级缓存是SessionFactory级的缓存。 SessionFactory的缓存分为内置缓存和外置缓存
+
+34. 如何解决项目中的高并发瓶颈
+	1. 数据库方面
+		数据库锁，读写分离，消息队列，复杂业务用存储过程，索引<聚集索引,非聚集索引>
+	2. 缓存方面
+	3. 负载均衡
+	
+	
+
