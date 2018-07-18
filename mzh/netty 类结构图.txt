@@ -16,18 +16,21 @@ Channel<interface>
 	* SocketChannel<interface>
 		* NioSocketChannel
 		OioSocketChannel
-ChannelHandler<interface>
-	* ChannelHandlerAdapter<class>
+ChannelHandler<interface>// 非线程安全，功能说明：类似于Serverlet里的filter，负责对I/O事件或操作进行拦截和处理，可选择性处理感兴趣的事件也可以透传和终止事件传递
+	* ChannelHandlerAdapter<class>// 功能说明：对ChannelHandler接口所有方法的覆盖，以满足用户在写自己Handler的时候可以有选择性的实现特定的方法而不是全部实现
 		* SimpleChannelInboundHandler<abstract class>
 			* WebSocketServerHandler<class>
 		* ChannelInitializer<abstract class>
 		MessageToByteEncoder
-		ByteToMessageDecoder
+		* ByteToMessageDecoder
 		* ChannelHandlerAppender
-
+		MessageToMessageEncoder
+			* Base64Encoder
+		MessageToMessageDecoder
+			* Base64Decoder
 	WebSocketFrameDecoder<interface>
 	WebSocketFrameEncoder<interface>
-* ChannelPipeline<interface>
+* ChannelPipeline<interface> // 线程安全，功能说明：它是ChannelHandler的容器，负责ChannelHandler的管理和事件拦截与调度
 	DefaultChannelPipeline<final class>
 Future<interface>
 	* ChannelFuture<interface>
@@ -35,3 +38,16 @@ Future<interface>
 	DefaultChannelHandlerContext<final class>
 * Unpooled<final class>
 * ByteBuf
+------------------------------------------
+ByteBuffer--jdk nio 和 ByteBuf--netty的区别 ？
+1. ByteBuffer一个位置指针：postion，3个下标 0,postion,limit，读写时需要手工调用flip(),clear()方法，需要编码谨慎
+2. ByteBuf两个位置指针:readIndex， writeIndex, 三个下标: readIndex,writeIndex,capacity, 读了数据后可以discarded，将已读的空间释放，会有内存的复制，最好不要频繁调用，影响性能
+3. ByteBuffer长度固定，一旦分配，容量不能动态扩展和收缩，编码大POJO对象时容易发生索引越界异常
+4. ByteBuffer的API功能有限，一些高级的特性和功能并不支持
+
+Netty的零Copy技术？
+DirectByteBuf：ByteBuf可以分为HeapByteBuf和DirectByteBuf，当使用DirectByteBuf可以实现零拷贝
+CompositeByteBuf：将多个ByteBuf封装成一个ByteBuf，对外提供封装后的ByteBuf接口
+DefaultFileRegion：Netty的文件传输类
+
+netty使用引用计数法申请回收内存

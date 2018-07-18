@@ -18,3 +18,17 @@ newmessagecenter
 	用户名密码以加密的方式存储在配置文件中--TODO
 
 6. http接口文档，参见New Message Center HTTP API.docx
+
+7. 目前git上的代码对数据库表是http_message，需要修改为rcs_message
+	http_message_id_index,http_session_info
+
+上线前的准备
+1. 目前只提供了getMessage和sendMessage接口
+2. 对当前接口的测试情况如何
+3. 数据导入进度，数据导入结果确认
+4. 2个数据的写入开关配置，代码检查
+5. isReadMySQL = false; // default is false
+   isWriteMySQL = true; // default is true
+6. MiniApp update_message table need Soumya do some change.
+7. MSC scylla 分支, OMC scylla分支
+8. 连接多台scylla db, 用户名 密码加密解密

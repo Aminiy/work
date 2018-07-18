@@ -7,3 +7,6 @@
 nohup java -jar -XX:-OmitStackTraceInFastThrow msc.jar&
 
 nohup java -jar -Xmx6144M -XX:-OmitStackTraceInFastThrow -Dorg.jboss.netty.epollBugworkaround=true cmp.jar&
+
+clone指定的分支
+git clone -b branch-a https://github.com/Aminiy/work.git 

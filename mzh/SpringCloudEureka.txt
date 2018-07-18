@@ -1,0 +1,31 @@
+SpringCloudEureka
+
+2018年07月18日
+
+Eureka：服务治理组件，包含服务注册中心，服务注册与发现机制，分为服务端和客户端2个组件
+Zookeeper： 旨在解决大规模分布式应用场景下，服务协调同步（Coordinate Service）的问题；它可以为同在一个分布式系统中的其他服务提供：统一命名服务、配置管理、分布式锁服务、集群管理等功能
+
+Spring Cloud Eureka 和 zookeeper的区别
+
+1. CAP方面(C-数据一致性；A-服务可用性；P-服务对网络分区故障的容错性，这三个特性在任何分布式系统中不能同时满足，最多同时满足两个)  Eureka注重AP zookeeper注重 CP
+2. Eureka暂不支持watch机制，服务端提供者的节点变化是通过长轮训实现的，zookeeper是通过watch机制可以主动通知
+3. 
+
+Eureka特性：服务健康检查，自我保护，心跳机制，失效剔除，服务下线，客户端缓存，自身集群监控，web化图形界面，Rest-ful接口(跨语言)
+zookeeper特性：leader选取机制(30-120秒，选取期间不可用)，服务节点数量最小值限制
+
+结论:
+Eureka更适合做服务发现，Zookeeper更适合做分布式服务协调
+
+
+扩展：
+如何通过redis实现分布式锁，如何通过Zookeeper实现分布式锁
+
+
+二、 Spring Cloud Ribbon
+	基于HTTP，TCP的客户端负载均衡工具，应该怎么样理解这个'客户端' ？
+	对'客户端'的个人理解：通过Ribbon实现的Eureka的客户端，也即服务的消费者
+	负载均衡策略：1. 随机，2.线性 3. 重拾 4. 权重 5.最优可用策略 6. 过滤线性轮策略 7.区域优先策略
+
+三、 Spring Cloud Hystrix
+	服务容错保护
