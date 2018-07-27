@@ -1,0 +1,59 @@
+分布式锁的实现
+
+1. redis 实现分布式锁
+
+	private static final Long RELEASE_SUCCESS = 1L;
+	private static final String LOCK_SUCCESS = "OK";
+    private static final String SET_IF_NOT_EXIST = "NX";
+    private static final String SET_WITH_EXPIRE_TIME = "PX";
+
+    /**
+     * 尝试获取分布式锁
+     * @param jedis Redis客户端
+     * @param lockKey 锁
+     * @param requestId 请求标识
+     * @param expireTime 超期时间
+     * @return 是否获取成功
+     */
+    public static boolean tryGetDistributedLock(Jedis jedis, String lockKey, String requestId, int expireTime) 
+    {
+    	// 保持操作的原子性-添加锁和设置过期时间不能用2个命令执行
+        String result = jedis.set(lockKey, requestId, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expireTime);
+
+        if (LOCK_SUCCESS.equals(result)) 
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 释放分布式锁
+     * @param jedis Redis客户端
+     * @param lockKey 锁
+     * @param requestId 请求标识
+     * @return 是否释放成功
+     */
+    public static boolean releaseDistributedLock(Jedis jedis, String lockKey, String requestId) 
+    {
+    	// 保持操作的原子性，避免一个动作分多次命令执行，只有锁的拥有者才可以释放锁
+        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+        Object result = jedis.eval(script, Collections.singletonList(lockKey), Collections.singletonList(requestId));
+
+        if (RELEASE_SUCCESS.equals(result)) 
+        {
+            return true;
+        }
+        return false;
+    }
+
+----------------------
+2. zookeeper实现分布式锁
+
+基于ZooKeeper分布式锁的流程
+a). 在zookeeper指定节点（locks）下创建临时顺序节点node_n
+b). 获取locks下所有子节点children
+c). 对子节点按节点自增序号从小到大排序
+d). 判断本节点是不是第一个子节点，若是，则获取锁；若不是，则监听比该节点小的那个节点的删除事件
+e). 若监听事件生效，则回到第二步重新进行判断，直到获取到锁
+

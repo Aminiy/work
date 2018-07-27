@@ -1,0 +1,93 @@
+CQL-Cassandra
++---------------------+
+| 整理时间:2018-07-27  |
++---------------------+
+
+1. 不区分大小写
+2. 支持的数据类型--及对应开发语言的字段类型https://cassandra.apache.org/doc/latest/cql/types.html
+	type		constants supported	description
+	ascii		string				ASCII character string
+	bigint		integer				64-bit signed long
+	blob		blob				Arbitrary bytes (no validation)
+	boolean		boolean				Either true or false
+	counter		integer				Counter column (64-bit signed value). See Counters for details
+	date		integer, strings	A date (with no corresponding time value). See Working with dates below for details
+	decimal		integer, float		Variable-precision decimal
+	double		integer float		64-bit IEEE-754 floating point
+	duration	duration,			A duration with nanosecond precision. See Working with durations below for details
+	float		integer, float		32-bit IEEE-754 floating point
+	inet		string				An IP address, either IPv4 (4 bytes long) or IPv6 (16 bytes long). Note that there is no inet constant, IP 									address should be input as strings
+	int			integer				32-bit signed int
+	smallint	integer				16-bit signed int
+	text		string				UTF8 encoded string
+	time		integer, string		A time (with no corresponding date value) with nanosecond precision. See Working with times below for details
+	timestamp	integer, string		A timestamp (date and time) with millisecond precision. See Working with timestamps below for details
+	timeuuid	uuid				Version 1 UUID, generally used as a “conflict-free” timestamp. Also see Timeuuid functions
+	tinyint		integer				8-bit signed int
+	uuid		uuid				A UUID (of any version)
+	varchar		string				UTF8 encoded string
+	varint		integer				Arbitrary-precision integer
+
+3. keyspace
+	不区分大小写，如果创建keyspace时使用引号，则会区分大小写，例如：
+	CREATE KEYSPACE Excalibur
+           WITH replication = {'class': 'NetworkTopologyStrategy', 'DC1' : 1, 'DC2' : 3}
+            AND durable_writes = false;
+
+    DROP KEYSPACE Excelsior;
+
+4. 表的主键(由2部分组成:partition key, clustering columns)
+	一个表只能有一个主键，一个主键可以由1个或者多个列组成，多个列组成的主键列的顺序很重要
+	CREATE TABLE t (
+	    a int,
+	    b int,
+	    c int,
+	    d int,
+	    PRIMARY KEY ((a, b), c, d)
+	);
+
+	PRIMARY KEY (a): a is the partition key and there is no clustering columns.
+	PRIMARY KEY (a, b, c) : a is the partition key and b and c are the clustering columns.
+	PRIMARY KEY ((a, b), c) : a and b compose the partition key (this is often called a composite partition key) and c is the clustering column.
+
+	ALTER TABLE addamsFamily ADD gravesite varchar;
+	DROP TABLE [ IF EXISTS ] table_name;
+	TRUNCATE [ TABLE ] table_name
+
+5. 常见的select语句格式
+	SELECT name, occupation FROM users WHERE userid IN (199, 200, 207);
+	SELECT JSON name, occupation FROM users WHERE userid = 199;
+	SELECT name AS user_name, occupation AS user_occupation FROM users;
+
+	SELECT time, value
+	FROM events
+	WHERE event_type = 'myEvent'
+	  AND time > '2011-02-03'
+	  AND time <= '2012-01-01'
+
+	SELECT COUNT (*) AS user_count FROM users;
+	select 不支持join和子查询，因此只能操作单表，支持order by,group by,limit,in
+
+6. insert操作
+	记录不存在则插入，存在则更新，无法根据insert的cql语句判断是执行了insert操作还是update操作。
+	可以通过IF NOT EXISTS来只做insert操作，但是会产生不可忽略的性能牺牲。需谨慎使用。insert 不支持计数器
+
+7. update操作
+	update的where条件必须包含主键的所有列，set操作只能针对非主键列。
+	update也不会做数据的检查工作，存在则更新不存在则创建新的行，无法知道具体执行那个操作，可以使用if判断执行update，同样会产生不可忽略的性能牺牲。
+	同一个分区内的update操作是原子性操作的，update支持计数器 downloadtimes = downloadtimes+1, 不过等号前后属性必须一致
+
+8. delete 操作
+	delete可以删除一行多行，也可以删除行里面的列
+	delete from users where userid=1;
+	delete name from users where userid=2;
+
+9. index
+	CREATE INDEX userIndex ON NerdMovies (user);
+	CREATE INDEX ON Mutants (abilityId);
+	CREATE INDEX ON users (keys(favs));
+	CREATE CUSTOM INDEX ON users (email) USING 'path.to.the.IndexClass';
+	CREATE CUSTOM INDEX ON users (email) USING 'path.to.the.IndexClass' WITH OPTIONS = {'storage': '/mnt/ssd/indexes/'};
+
+10. 其他
+	不支持大的blob数据存储，最好小于1MB，Cassandra对大数据没有优化，建议大的文件拆分成小的存储，任何大于16MB的数据都被会拒绝存储，可以在配置文件中修改
