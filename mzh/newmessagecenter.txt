@@ -21,14 +21,39 @@ newmessagecenter
 
 7. 目前git上的代码对数据库表是http_message，需要修改为rcs_message
 	http_message_id_index,http_session_info
-
+	另外 rcs_broadcast，rcs_notify 表结构和表主键有问题，需要重新核对，参考：NMSC&DB Structure-final.pptx
 上线前的准备
 1. 目前只提供了getMessage和sendMessage接口
 2. 对当前接口的测试情况如何
 3. 数据导入进度，数据导入结果确认
+	mysql中以byte数组存储的request， 在scylla的工具导入中有的是以hexString存储的，这个问题需要弄明白
 4. 2个数据的写入开关配置，代码检查
 5. isReadMySQL = false; // default is false
    isWriteMySQL = true; // default is true
 6. MiniApp update_message table need Soumya do some change.
 7. MSC scylla 分支, OMC scylla分支
 8. 连接多台scylla db, 用户名 密码加密解密
+9. MSC--scylla分支 OMC--scylla分支(暂无)
+NMSC
+phase 1
+	1: DB layer will be upgraded to add support for scylla/cassandra
+	2. all data will be migrated from mysql to scylla/cassandra
+	3. both mysql and scylla dbs will be support for some time
+	4. once the system is proven stable, mysql will be disconnected based on a server configuration switch.
+
+
+-------------------
+
+MSC   OMC   cassandra 功能支持
+
+1.  部署
+	msc，omc.jar    msc_lib   omc_lib 大量的依赖包 scally_config.properties
+
+	US_export_policy.jar
+	local_policy.jar
+	jdk安装目录， 可能会导致AES加密报错，安全等级问题  /jdk/jre/lib/security
+	需要下载这2个包然后替换安装目录中的jar文件  根据jdk版本对应下载，下载地址如下
+	https://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html
+	https://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
+
+	下载jdk 1.8的  然后将他们把服务器上的 对应位置的jar包替换掉即可
