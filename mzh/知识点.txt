@@ -14,6 +14,7 @@
 			a:如果集群任意master挂掉,且当前master没有slave.集群进入fail状态,也可以理解成进群的slot映射[0-16383]不完成时进入fail状态.
 			b:如果进群超过半数以上master挂掉，无论是否有slave集群进入fail状态.
 2. 数据库SQL
+
 	left join on..		以左表为主表，显示主所有和右表相关的
 	right join on..		以右表为主表，显示主所有和左表相关的
 	inner join on.. 	显示的是两个表相关的信息(只显示全匹配的) 
@@ -34,7 +35,9 @@
 	MySql数据库中没有非聚集索引的概念，MYISAM根本就没有聚集索引；INNODB，主键就是聚集索引，你也无法修改
 	单一索引和联合索引？
 	联合索引只支持使用最左侧的组合，因此联合索引的字段顺序很重要，比如：索引(a,b,c) 支持使用a,ab,abc,但是不支持b,c,bc
-
+	索引是怎么实现的？B+树
+	B+树的时间复杂度是多少？ Hash的时间复杂度是多少？ 为什么不用Hash实现索引？
+	
 	如何实现主机-从机的数据同步问题？(1主多从)
 		利用数据库复制技术 实现数据同步更新
 		复制是将一组数据从一个数据源拷贝到多个数据源的技术，是将一份数据发布到多个存储站点上的有效方式。使用复制技术，用户可以将一份数据发布到多台服务器上，从而使不同的服务器用户都可以在权限的许可的范围内共享这份数据。复制技术可以确保分布在不同地点的数据自动同步更新，从而保证数据的一致性
@@ -47,7 +50,19 @@
 	
 3. JS，JQuery
 4. ELK
-	FILTER
+	Logstash
+		工作流：input->decode->filter->encode->output
+		包含各种插件
+			输入插件：STDIN，TCP，FILE，syslog,collectd，log4j,redis,kafka
+			编解码插件： JSON，mulitiline
+			过滤插件：grok,date,mutate,ruby,metrics
+			输出插件： Elasticsearch，Graphite，HDFS，Nagios,email,tcp,stdout,redis,kafka
+				HDFS： Logstash官方并没有输出到HDFS的插件，只能通过社区的http接口或者java接口完成
+				tcp： 因为配置简单，很多人觉得也能满足工作需求，所以用它作为输出，但是并不建议这么做
+				stdout： 和输入插件stdin对应也是最基础最简单的插件，一般用来调试用
+	Elasticsearch
+	Kabana
+
 5. RESTful
 6. APNS
 7. maven(环境变量的配置)
@@ -254,5 +269,5 @@
 	2. 缓存方面
 	3. 负载均衡
 	
-	
+35. mysql B+树 叶子节点 值 排序 区间查找
 

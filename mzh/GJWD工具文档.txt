@@ -1,0 +1,20 @@
+工具文档
+
+1. cincommon.jar 转成maven项目 common-base 1.0.0
+2. 配置scylla db配置文件，ip/port username,password,keyspace, add tables in scylla as mysql rcs_message database's tables
+3. mysql_config.properties的配置，url+dbname, username/password, [table count, startkey, endkey]
+	startkey, endkey is for id column in mysql DB, 
+4. build tools.jar with pom.xml in migrationdatatool project, 
+5. run command: 
+	a). 'java -jar tools.jar rcs_message' to migration rcs_message tables data.
+	b). 'java -jar tools.jar rcs_broadcast' to migration rcs_broadcast tables data.
+	c). 'java -jar tools.jar rcs_nofity' to migration rcs_nofity tables data.
+	d). 'java -jar tools.jar rcs_session_info' to migration rcs_session_info tables data.
+
+	Note: if one command is not finished, can't do others command at same time.
+
+	we can get the migration log in 
+	rcs_message-log.log,
+	broadcast-message-log.log,
+	offline_notify-log.log
+	session_info-log.log

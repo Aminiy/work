@@ -1,0 +1,29 @@
+出差
+
+2018.11.19--2018.12.02
+
+1. mysql 数据通过工具迁移到 cassandra
+	pre-prod  迁移中， KC团队小伙子不会用，迁移数据出错
+	replica,  hemant负责，未迁移
+	prod
+	rcs_updated_message 等待jeevadeesh 团队修改代码，确定表的cassandra字段后，增加迁移功能到迁移工具，并交付给hemant
+
+2. msc，omc 支持cassandra
+	pre-prod 测试进行中   依赖导入的数据，目前数据导入不正确
+	bug修改  所有的分支需要提交到Branch_PreProd分支
+	consistency.level 代码已经修改完成，并提交到分支scylla，msc omc 各2条sql
+3. 待工作的活
+	迁移工具改为1000条数据操作一次数据库查询， 单条写入到mysql
+	msc,omc 支持consistency.level
+	生产更新发CR
+		1. msc.jar omc.jar  cincommon.jar  msc_lib. omc_lib， 创建数据库脚本文件，数据的迁移工作
+		2. scylla_config.properties
+		3. SQL语句  isReadMySQL isWriteMySQL, msc consistent.level  omc consistency.level 各2条SQL
+		4. JDK1.8 的 AES encrypt 加密报错问题   包的替换
+		5. nmsc   http API 工作
+-----------------------------
+
+下一个阶段任务
+1. newmessagecenter  http
+2. mutilple logon
+3. tenant - id

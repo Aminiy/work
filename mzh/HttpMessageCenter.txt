@@ -1,0 +1,18 @@
+HttpMessageCenter
+
+说明：
+1. 以Http的方式对外提供原MSC的部分接口。
+2. 数据存取只操作cassandra数据库-通过MSC服务的notify 0x01接口发送消息，MSC服务没有任何数据库操作
+3. 项目使用light4j框架
+4. 项目名称 GIT -- NewMessageCenter
+
+部署条件
+1. 依赖JDK 1.8
+2. cincommon 转为maven项目
+3. /lib 包，配置文件
+
+
+交付
+1. Http格式的协议文档
+2. 代码-git
+3. 流程图

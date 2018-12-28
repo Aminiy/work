@@ -13,6 +13,8 @@ newmessagecenter
 	a) credential bind with deviceid, so need http take deviceId parameter.
 	b) need add interface in UCC. 
 
+	备注： 关于鉴权，采用现有的http鉴权方式，niginx + was + ucc
+
 5. Scylla DB
 	多节点问题--TODO
 	用户名密码以加密的方式存储在配置文件中--TODO
@@ -22,7 +24,12 @@ newmessagecenter
 7. 目前git上的代码对数据库表是http_message，需要修改为rcs_message
 	http_message_id_index,http_session_info
 	另外 rcs_broadcast，rcs_notify 表结构和表主键有问题，需要重新核对，参考：NMSC&DB Structure-final.pptx
-上线前的准备
+
+***********
+上线前的准备 
+***********
+
+0. JDK 1.8
 1. 目前只提供了getMessage和sendMessage接口
 2. 对当前接口的测试情况如何
 3. 数据导入进度，数据导入结果确认
