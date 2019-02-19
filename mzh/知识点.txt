@@ -1,3 +1,5 @@
+刷题网站
+https://leetcode.com/
 
 1. redis原理(不支持事务,单线程操作,数据都在内存中)
 	a). AOF持久化(每次redis的写操作都会记录在.aof文件中，性能较低)
@@ -270,4 +272,12 @@
 	3. 负载均衡
 	
 35. mysql B+树 叶子节点 值 排序 区间查找
+
+36. RPC远程调用框架-Dubbo
+	协议：默认dubbo，该协议适合小数据高并发，消费者远高于服务者，不适合大文件，视频类传输，除非请求量非常低
+
+37. web 容器 jetty, undertow, tomcat 在spring boot中的集成配置
+
+38. mvn eclipse:eclipse, 
+
 

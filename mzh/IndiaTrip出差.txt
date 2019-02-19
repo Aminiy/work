@@ -24,6 +24,20 @@
 -----------------------------
 
 下一个阶段任务
-1. newmessagecenter  http
+1. newmessagecenter  http API
 2. mutilple logon
 3. tenant - id
+
+-----新的工作内容
+1. 将MRS服务修改为支持cassandra数据库
+	King提出存储分为2个表，一个存储二人，一个存储群组
+2. NMSC--http API，如果MSC修改了数据库表， 则此服务也需要修改服务代码，与之适配
+3. MSC的数据库中(cassandra)增加字段，标识下列含义
+	该修改可以在新业务数据上生效，老数据怎么办？老数据遇到新业务逻辑的规避问题
+	cassandra的message表新增字段：
+
+	a). 消息是否是转发消息 -- 数据库来源，客户端上传
+	b). 消息的原始发送者的 user ID， 涉及到修改消息的C->S发送request信令，S->C的request（透传确认）
+	c). 消息的父 user id， 涉及到修改消息的C->S发送request 信令，S->C的request（透传确认）
+	d). 消息的hash值，用于搜索整个转发消息的转发链
+		疑问： 什么样的消息有hash值？如何设计这个hash值？搜索的范围是什么？搜索的结果是什么？UI效果设计是什么？整个forward消息的链上的hash值有没有关系？
