@@ -41,3 +41,39 @@
 	c). 消息的父 user id， 涉及到修改消息的C->S发送request 信令，S->C的request（透传确认）
 	d). 消息的hash值，用于搜索整个转发消息的转发链
 		疑问： 什么样的消息有hash值？如何设计这个hash值？搜索的范围是什么？搜索的结果是什么？UI效果设计是什么？整个forward消息的链上的hash值有没有关系？
+
+
+
+
+开发环境 india
+-----------------------
+10.135.140.114	可以连上
+10.135.140.116  可以连上 cicd/Qsdhinb!23
+10.135.140.118	可以连上 部署nmsc，cmp,msc,uidc...
+10.135.140.119	可以连上 cicd/Qsdhinb!23
+
+root/Qsdhinb!23
+cicd/Qsdhinb!23
+root/Qsdhinb123
+cicd/Qsdhinb123
+-----------------------
+
+10.135.140.119 默认JDK环境变量为 1.7版本,如果要用1.8版本启动服务:
+nohup /usr/local/jdk1.8.0_181/bin/java -jar omc_cassandra.jar &
+
+开发环境正在做JDK版本升级的工作， 后续会进一步处理开发环境服务，数据等问题。
++91
+手机号办理激活，父亲姓名，朋友手机号，自己的姓名，出生日期
+收到邮件后，就可以安装sim卡， 然后拨打1977  开始人
+
+
+工服务激活
+
+
+DEV --> pre-prod --> replica --> prod
+
+
+MSC 创建新的分支， 包含我的更改， 更新RRF文档， 发送到SASO team， 他们会发给peddakotla
+cincommon 用最新的commit id
+
+75141279858258

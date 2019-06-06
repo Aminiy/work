@@ -1,22 +1,89 @@
 
-开发环境
+设计模式
 
------------------------
-10.135.140.114	可以连上
-10.135.140.116  可以连上 cicd/Qsdhinb!23
-10.135.140.118	可以连上 部署nmsc，cmp,msc,uidc...
-10.135.140.119	可以连上 cicd/Qsdhinb!23
+1. 代理模式
+-------
+静态代理：可以做到在不修改目标对象的功能前提下,对目标功能扩展
+public interface IUserDao 
+{
+    void save();
+}
 
-root/Qsdhinb!23
-cicd/Qsdhinb!23
-root/Qsdhinb123
-cicd/Qsdhinb123
------------------------
+/**
+ * 接口实现
+ * 目标对象
+ */
+public class UserDao implements IUserDao 
+{
+    public void save() 
+    {
+        System.out.println("----已经保存数据!----");
+    }
+}
 
-10.135.140.119 默认JDK环境变量为 1.7版本,如果要用1.8版本启动服务:
-nohup /usr/local/jdk1.8.0_181/bin/java -jar omc_cassandra.jar &
+/**
+ * 代理对象,静态代理
+ */
+public class UserDaoProxy implements IUserDao
+{
+    //接收保存目标对象
+    private IUserDao target;
+    public UserDaoProxy(IUserDao target)
+    {
+        this.target=target;
+    }
 
-开发环境正在做JDK版本升级的工作， 后续会进一步处理开发环境服务，数据等问题。
-+91
-手机号办理激活，父亲姓名，朋友手机号，自己的姓名，出生日期
-收到邮件后，就可以安装sim卡， 然后拨打1977  开始人工服务激活
+    public void save() {
+        System.out.println("开始事务...");
+        target.save();//执行目标对象的方法
+        System.out.println("提交事务...");
+    }
+}
+
+动态代理
+
+/**
+ * 创建动态代理对象
+ * 动态代理不需要实现接口,但是需要指定接口类型
+ */
+/**
+ * 目标对象,没有实现任何接口
+ */
+public class UserDao {
+    public void save() {
+        System.out.println("----已经保存数据!----");
+    }
+}
+
+/**
+ * Cglib子类代理工厂
+ * 对UserDao在内存中动态构建一个子类对象
+ */
+public class ProxyFactory implements MethodInterceptor
+{
+    //维护目标对象
+    private Object target;
+
+    public ProxyFactory(Object target) {
+        this.target = target;
+    }
+
+    //给目标对象创建一个代理对象
+    public Object getProxyInstance()
+    {
+        Enhancer en = new Enhancer();//1.工具类
+        en.setSuperclass(target.getClass()); //2.设置父类
+        en.setCallback(this);//3.设置回调函数
+        return en.create();//4.创建子类(代理对象)
+    }
+
+    @Override
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        System.out.println("开始事务...");
+
+        Object returnValue = method.invoke(target, args);//执行目标对象的方法
+        
+        System.out.println("提交事务...");
+        return returnValue;
+    }
+}

@@ -24,10 +24,20 @@
 QWER1101@1234
 edcR$#678v123123
 QAZ@Wsx345123123
-Wwsx^edc45
+Wwsx^edc45    cscio password
 
 edcR$#678v123123
 
 ZXCV!qaz0909
 
 10.32.131.241
+
+
+idea 快捷键
+rename		Shift + F6
+import		option + Enter
+
+
+取消隐藏文件在finder中的显示
+defaults write com.apple.finder AppleShowAllFiles -boolean false ; killall Finder
+
